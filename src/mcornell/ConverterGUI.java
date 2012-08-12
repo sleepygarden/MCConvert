@@ -113,7 +113,7 @@ public class ConverterGUI implements ActionListener{
 		if (title == null)
 			title = "Hey! Listen!";
 		if (notif == null)
-			notif = "Heads Up!";
+			notif = "Hey! Listen!";
 		JOptionPane.showMessageDialog(frame, notif, title, JOptionPane.PLAIN_MESSAGE);
 	}
 	
