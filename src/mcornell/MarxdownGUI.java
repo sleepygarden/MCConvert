@@ -19,7 +19,6 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
-import javax.swing.JTextArea;
 import javax.swing.JTextPane;
 import javax.swing.JWindow;
 import javax.swing.table.DefaultTableModel;
@@ -27,19 +26,28 @@ import javax.swing.text.Style;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyledDocument;
 
-public class MarxdownGUI implements ActionListener, KeyListener{
+public class MarxdownGUI implements ActionListener{
 	
 	public final static String newline = "\n";
+	public final static String tab = "\t";
+	public final static String doublequote = "\"";
+	public final static String singlequote = "\'";
+	public final static String backslash = "\\";
+	public final static String openparen = "(";
+	public final static String closeparen = ")";
+	public final static String nullparen = "()";
+	public final static String opencurlybrace = "\\{";
+	public final static String closecurlybrace = "\\}";
+	public final static String nullcurlybrace = "\\{\\}";
 
 	private JFrame frame;
 	private JWindow popUp;
 	private String button = "";
 	
     private Font monospaced;
-
 	
 	private static JTextPane input;
-	JTextArea output;
+	private static JTextPane output;
 	
 	StyledDocument doc;
 
@@ -51,26 +59,35 @@ public class MarxdownGUI implements ActionListener, KeyListener{
 			"namespace",
 			"xml",
 			"json",
-			"test"
+			"test",
+			"new",
+		};
+	public static final String[] symbols = 
+		{
+			"@", 
+			"#",
+			"(",
+			")",
+			"{",
+			"}"
 		};
 	
 	public MarxdownGUI(){
 		init();
 	}
-
 	
+	//INIT
 	public void init(){
 		
 		monospaced = new Font(Font.MONOSPACED, 0, 12);
+		InputListener inputListener = new InputListener();
 
 		frame = new JFrame();
 		frame.setBounds(0, 0, 810, 620);
 		frame.setLocationRelativeTo(null);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		frame.setTitle("Marx, the People's XML Authoring tool:");
+		frame.setTitle("Marx, the People's XML Authoring tool");
 		frame.getContentPane().setLayout(null);
-		frame.addKeyListener(this); 
-
 		
 		JLabel inLbl = new JLabel("INPUT");
 		inLbl.setBounds(165,5, 50, 15);
@@ -81,16 +98,15 @@ public class MarxdownGUI implements ActionListener, KeyListener{
 		frame.getContentPane().add(outLbl);
 		
         input = new JTextPane();
-        input.setFont(monospaced);
-        input.addKeyListener(this);
+        input.setFont(monospaced); //make monospaced the constant pane wide font
+        input.addKeyListener(inputListener);
         doc = input.getStyledDocument();
         JScrollPane inScrollPane = new JScrollPane(input);
         inScrollPane.setBounds(5,25,350,570);
-        inScrollPane.addKeyListener(this);   
         frame.getContentPane().add(inScrollPane);
 		
-		output = new JTextArea();
-		output.setLineWrap(true);
+		output = new JTextPane();
+		output.setFont(monospaced);
 		output.setEditable(false);
 		JScrollPane errScrollPane = new JScrollPane(output);
 		errScrollPane.setBounds(455, 25, 350, 570);
@@ -127,29 +143,123 @@ public class MarxdownGUI implements ActionListener, KeyListener{
 		frame.getContentPane().add(btnReset);
 		
 	    initStyles();
-
-	}
+	}	
 	
 	private void initStyles(){
+		
 		Style style = input.addStyle("Keyword", null);
-		StyleConstants.setForeground(style, new Color(70, 0, 70));
+		StyleConstants.setForeground(style, new Color(80, 0, 80));
 		StyleConstants.setBold(style,true);
+		StyleConstants.setItalic(style,false);
+		StyleConstants.setFontSize(style, 12);
+		
+		style = input.addStyle("Symbol", null);
+		StyleConstants.setForeground(style, new Color(225, 0, 0));
+		StyleConstants.setBold(style,false);
+		StyleConstants.setItalic(style,false);
+		StyleConstants.setFontSize(style, 12);
+		
+		style = input.addStyle("Number", null);
+		StyleConstants.setForeground(style, new Color(0, 0, 225));
+		StyleConstants.setBold(style,false);
+		StyleConstants.setItalic(style,false);
 		StyleConstants.setFontSize(style, 12);
 		
 		style = input.addStyle("Normal", null);
 		StyleConstants.setForeground(style, new Color(0, 0, 0));
 		StyleConstants.setBold(style,false);
+		StyleConstants.setItalic(style,false);
 		StyleConstants.setFontSize(style, 12);
 		
-		style = input.addStyle("Italic", null);
-		StyleConstants.setItalic(style, true);
+		style = input.addStyle("Comment", null);
+		StyleConstants.setForeground(style, new Color(170,170,170));
+		StyleConstants.setBold(style,false);
+		StyleConstants.setItalic(style,true);
+		StyleConstants.setFontSize(style, 12);
 		
-		style = input.addStyle("24pts", null);
-		StyleConstants.setFontSize(style, 24);
+		style = input.addStyle("String", null);
+		StyleConstants.setForeground(style, new Color(0,175,0));
+		StyleConstants.setBold(style,false);
+		StyleConstants.setItalic(style,false);
+		StyleConstants.setFontSize(style, 12);
 		
 		style = input.addStyle("Monospaced", null);
 		StyleConstants.setFontFamily(style, Font.MONOSPACED);
+	}
+	//END INIT
+	
+	//STYLE SETTING
+	public void makeKeystyle(int begin, int end){
+        doc.setCharacterAttributes(begin, end-begin, input.getStyle("Keyword"), true);
+	}
+	public void makeSymbolstyle(int begin, int end){
+        doc.setCharacterAttributes(begin, end-begin, input.getStyle("Symbol"), true);
+	}
+	public void makeNumberstyle(int begin, int end){
+        doc.setCharacterAttributes(begin, end-begin, input.getStyle("Number"), true);
+	}
+	public void makeCommentstyle(int begin, int end){
+        doc.setCharacterAttributes(begin, end-begin, input.getStyle("Comment"), true);
+	}
+	public void makeStringstyle(int begin, int end){
+        doc.setCharacterAttributes(begin, end-begin, input.getStyle("String"), true);
+	}	
+	public void refreshInputStyles(){		//refresh text formatting
+
+		if (input.getText() !=null)
+		{
+			doc.setCharacterAttributes(0, input.getText().length(),input.getStyle("Normal"), true);
 		
+			List<IndexWrapper> list;			//highlighting keywords
+			list = findIndexesForKeywords(keywords);
+			if (list != null)
+			{
+				for (IndexWrapper wrapper : list)
+				{
+					makeKeystyle(wrapper.getStart(), wrapper.getEnd());
+				}
+			}
+			list = findIndexesForSymbols();
+			if (list != null)
+			{
+				for (IndexWrapper wrapper : list)
+				{
+					makeSymbolstyle(wrapper.getStart(), wrapper.getEnd());
+				}
+			}
+			list = findIndexesForNumbers();
+			if (list != null)
+			{
+				for (IndexWrapper wrapper : list)
+				{
+					makeNumberstyle(wrapper.getStart(), wrapper.getEnd());
+				}
+			}
+			list = findIndexesForStrings();
+			if (list != null)
+			{
+				for (IndexWrapper wrapper : list)
+				{
+					makeStringstyle(wrapper.getStart(), wrapper.getEnd());
+				}
+			}
+			list = findIndexesForComments();
+			if (list != null)
+			{
+				for (IndexWrapper wrapper : list)
+				{
+					makeCommentstyle(wrapper.getStart(), wrapper.getEnd());
+				}
+			}
+		}
+	}
+	
+	//END STYLING
+	
+	//PUBLIC SETTERS AND GETTERS
+	
+	public void setVersion(String v){
+		frame.setTitle(frame.getTitle()+" version:"+v);
 	}
 	
 	public Window getFrame() {
@@ -168,25 +278,64 @@ public class MarxdownGUI implements ActionListener, KeyListener{
 		button = "";
 	}
 	
-	public void makeKeystyle(int begin, int end){
-        doc.setCharacterAttributes(begin, end-begin, input.getStyle("Keyword"), true);
+	public void setInput(String message){
+		input.setText(message+newline);
 	}
-	public void refreshTextStyle(){		//refresh text formatting
-
-		if (input.getText() !=null)
-		{
-			doc.setCharacterAttributes(0, input.getText().length(),input.getStyle("Normal"), true);
+	public void setOutput(String message){
+		output.setText(message+newline);
+	}
+	
+	public void appendInput(String message){
+		input.setText(input.getText()+message+newline);
+	}
+	
+	public void appendOutput(String message){
+		output.setText(output.getText()+message+newline);
+	}
+	
+	public void clean(){
+		input.setText(null);
+		output.setText(null);
+	}
+	//END SETTERS GETTERS
+	
+	//POP/ERROR HANDLING
+	
+	public void popCheatSheet()
+	{
+		popUp = new JWindow();
+		popUp.setBounds(0, 0, 400, 300);
+		popUp.setLocationRelativeTo(null);
+		popUp.setName("Cheat Sheet");
+		popUp.getContentPane().setLayout(null);
 		
-			List<IndexWrapper> list;			//highlighting keywords
-			list = findIndexesForKeywords(keywords);
-			if (list != null)
-			{
-				for (IndexWrapper wrapper : list)
-				{
-					makeKeystyle(wrapper.getStart(), wrapper.getEnd());
-				}
-			}
-		}
+		DefaultTableModel model = new DefaultTableModel();
+		model.addColumn("Marx Keyword");
+		model.addColumn("Function");
+		
+		model.addRow(new Object[]{"Keyword", "Keyword Definition"});	
+		model.addRow(new Object[]{"Symbol", "Symbol Definition"});	
+		
+		JTable params = new JTable(model);
+		params.getTableHeader().setReorderingAllowed(false);
+		params.getTableHeader().setResizingAllowed(false);
+		params.setCellSelectionEnabled(false);
+		JScrollPane paramsScrollPane = new JScrollPane(params);
+		paramsScrollPane.setBounds(5, 5, 390, 262);
+		popUp.getContentPane().add(paramsScrollPane);		
+		
+		JButton btnPopOk = new JButton("OK");
+		btnPopOk.setBounds(300, 270, 100, 25);
+		btnPopOk.setActionCommand("pop_cheat_ok");
+		btnPopOk.addActionListener(MarxdownGUI.this);
+		popUp.getContentPane().add(btnPopOk);	
+		
+		popUp.setVisible(true);
+		
+	}
+	public void dismissCheatSheet(){
+		popUp.setVisible(false);
+		popUp.dispose();
 	}
 	
 	public void popAlert(String notif, String title){
@@ -247,88 +396,42 @@ public class MarxdownGUI implements ActionListener, KeyListener{
 			default: 
 				message = "An unknown error occured";
 				break;	        
-
 		}
-			appendOutput(message);
+		appendOutput(message);
 	}
 	
-	public void setInput(String message){
-		input.setText(message+newline);
-	}
-	public void setOutput(String message){
-		output.setText(message+newline);
-	}
-	
-	public void appendInput(String message){
-		input.setText(input.getText()+message+newline);
-	}
-	
-	public void appendOutput(String message){
-		output.setText(output.getText()+message+newline);
-	}
-	
-	public void clean(){
-		input.setText(null);
-		output.setText(null);
-	}
-	
-	public void popCheatSheet()
-	{
-		popUp = new JWindow();
-		popUp.setBounds(0, 0, 400, 300);
-		popUp.setLocationRelativeTo(null);
-		popUp.setName("Cheat Sheet");
-		popUp.getContentPane().setLayout(null);
+	//END POP
 		
-		
-		//TODO make this just a text view, not a table
-		DefaultTableModel model = new DefaultTableModel();
-		model.addColumn("");
-		model.addColumn("");
-		model.addRow(new Object[]{"Marx Symbol", "what it does"});
-		model.addRow(new Object[]{"duh", "bluh"});
-		model.addRow(new Object[]{"1", "2"});
-
-		JTable params = new JTable(model);
-		params.getTableHeader().setReorderingAllowed(false);
-		params.getTableHeader().setResizingAllowed(false);
-		params.setCellSelectionEnabled(false);
-		JScrollPane paramsScrollPane = new JScrollPane(params);
-		paramsScrollPane.setBounds(5, 5, 390, 262);
-		popUp.getContentPane().add(paramsScrollPane);		
-		//
-		
-		JButton btnPopOk = new JButton("OK");
-		btnPopOk.setBounds(300, 270, 100, 25);
-		btnPopOk.setActionCommand("pop_cheat_ok");
-		btnPopOk.addActionListener(MarxdownGUI.this);
-		popUp.getContentPane().add(btnPopOk);	
-		
-		popUp.setVisible(true);
-		
-	}
-	public void dismissCheatSheet(){
-		popUp.setVisible(false);
-		popUp.dispose();
-	}
-	
-	
-	@Override
-	public void actionPerformed(ActionEvent e) {
-		   button = e.getActionCommand();     		
-	}
-	
-	public void setVersion(String v){
-		frame.setTitle(frame.getTitle()+" "+v);
-	}
-	
+	//REGEX
 	public static List<IndexWrapper> findIndexesForKeywords(String[] keywords)
 	{
 		String regex = "";
 		for (String str:keywords){
-			regex = regex +"|" + "\\b"+str+"\\b";
+			regex = regex +"|" + "\\b"+str+"\\b";											
 		}
 		Pattern pattern = Pattern.compile(regex.substring(1));
+		Matcher matcher = pattern.matcher(input.getText());
+		List<IndexWrapper> wrappers = new ArrayList<IndexWrapper>();
+
+		while(matcher.find() == true)
+		{
+			System.out.println("got a keyword");
+			int end = matcher.end();
+			int start = matcher.start();
+			IndexWrapper wrapper = new IndexWrapper(start, end);
+			wrappers.add(wrapper);
+		}
+		return wrappers;
+	}
+
+	public static List<IndexWrapper> findIndexesForSymbols()
+	{
+		String regex = "";
+		for (String str:symbols){
+			regex = regex + str;											
+		}
+		regex = "[" + regex + "]";
+		Pattern pattern = Pattern.compile(regex);
 		Matcher matcher = pattern.matcher(input.getText());
 		List<IndexWrapper> wrappers = new ArrayList<IndexWrapper>();
 
@@ -341,21 +444,86 @@ public class MarxdownGUI implements ActionListener, KeyListener{
 		}
 		return wrappers;
 	}
+	public static List<IndexWrapper> findIndexesForNumbers()
+	{
+		String regex = "[\\d]+"; //1 or more digits (0-9)
+		
+		Pattern pattern = Pattern.compile(regex);
+		Matcher matcher = pattern.matcher(input.getText());
+		List<IndexWrapper> wrappers = new ArrayList<IndexWrapper>();
 
-
-	//KEY LISTENER
-	@Override
-	public void keyPressed(KeyEvent arg0) {
+		while(matcher.find() == true)
+		{
+			System.out.println("got a number");
+			int end = matcher.end();
+			int start = matcher.start();
+			IndexWrapper wrapper = new IndexWrapper(start, end);
+			wrappers.add(wrapper);
+		}
+		return wrappers;
 	}
+	public static List<IndexWrapper> findIndexesForStrings()
+	{
+		String regex = "\"[\\p{Print}]*\""; //any collection of visible and non visible items surrounded by "s
+		
+		Pattern pattern = Pattern.compile(regex);
+		Matcher matcher = pattern.matcher(input.getText());
+		List<IndexWrapper> wrappers = new ArrayList<IndexWrapper>();
 
-
-	@Override
-	public void keyReleased(KeyEvent arg0) {
-		refreshTextStyle();
+		while(matcher.find() == true)
+		{
+			int end = matcher.end();
+			int start = matcher.start();
+			IndexWrapper wrapper = new IndexWrapper(start, end);
+			wrappers.add(wrapper);
+		}
+		return wrappers;
 	}
+	public static List<IndexWrapper> findIndexesForComments()
+	{
+		String regex = "//[\\p{Print}]*\n"; //any collection preceded by // and followed by a newline
+		
+		Pattern pattern = Pattern.compile(regex);
+		Matcher matcher = pattern.matcher(input.getText());
+		List<IndexWrapper> wrappers = new ArrayList<IndexWrapper>();
 
-
-	@Override
-	public void keyTyped(KeyEvent arg0) {		
+		while(matcher.find() == true)
+		{
+			System.out.println("got a comment");
+			int end = matcher.end();
+			int start = matcher.start();
+			IndexWrapper wrapper = new IndexWrapper(start, end);
+			wrappers.add(wrapper);
+		}
+		return wrappers;
 	}
+	//END REGEX
+	
+	//LISTENERS
+	@Override
+	public void actionPerformed(ActionEvent e) {
+		   button = e.getActionCommand();     		
+	}
+	
+	public class InputListener implements KeyListener{
+
+		@Override
+		public void keyPressed(KeyEvent e) {
+	
+		}
+
+		@Override
+		public void keyReleased(KeyEvent e) {
+			refreshInputStyles();
+		}
+
+		@Override
+		public void keyTyped(KeyEvent e) {		
+		}
+		
+	}
+	//END LISTENERS
+	
 }
+
+

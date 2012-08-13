@@ -1,10 +1,6 @@
 package mcornell;
 
 import java.awt.EventQueue;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class MarxDown {
 
@@ -74,9 +70,18 @@ public static void main(String[] args){
 				
 	}
 
-	public static void convertToJson()
+	public static void convertToJSON()
 	{
 		
+	}
+	
+	public static void convertToXML()
+	{
+		
+	}
+	
+	public static void log(String message){
+		System.out.println(message);
 	}
 	
 }
