@@ -55,7 +55,7 @@ public class XML_JSONConverter {
 				window.resetButtonKey();
 			}
 			
-			if (window.getButtonKey().equals("submit")) {
+			if (window.getButtonKey().equals("convert")) {
 				if (validate()){
 					parse(content);
 					content = null;
@@ -326,23 +326,31 @@ public class XML_JSONConverter {
 			return false;
 		if (!content.contains(">"))
 			return false;
-		//if (!content.contains("<?xml"))//TODO find if the xml def at the top is manditory
-		//	return false;
+		if (!content.contains("<?xml")) //all xml docs but start with a xml tag
+			return false;
+		if (content.contains("<xml")) //the tag <xml> is reserved
+			return false;
 		return true;
 	}
 	
-	public static boolean isWellFormedXml(){		
+	public static boolean isWellFormedXml(){
+		boolean isValid = true;
 		Stack<Integer> braces = new Stack<Integer>(); //locations at which there are < and >
 		Stack<String> tags = new Stack<String>(); //tags
 		Stack<Integer> tagsLoc = new Stack<Integer>(); //locations at which there is a complete open and closing tag set
-		
+		Stack<Integer> quotes = new Stack<Integer>();
 		
 		for (Integer x = 0; x < content.length(); x++)
 		{
 			String mini = content.substring(x,x+1);
 			System.out.println(mini);
+			
+			if (mini.equals("\"")){ //found a quote
+				if (quotes.isEmpty()) quotes.push(x);
+				else quotes.pop();
+			}
 						
-			if (mini.equals("<"))
+			else if (mini.equals("<"))
 			{
 				braces.push(x);
 			}
@@ -351,7 +359,7 @@ public class XML_JSONConverter {
 				if (braces.isEmpty())
 				{ //if your stack is empty (you havent found any <'s yet) and you find a >
 			        window.logError(101,x);
-					return false;
+			        isValid=false;
 				}
 				else 
 				{
@@ -365,7 +373,7 @@ public class XML_JSONConverter {
 					{
 						//found an extra closing tag
 			        	window.logError(103,tagStart);
-						return false;
+			        	isValid = false;
 					}
 					else if(tag.startsWith("</"))
 					{
@@ -381,12 +389,13 @@ public class XML_JSONConverter {
 						{
 							//open/close tag mismatch
 							window.logError(201,tagIndex);
+							isValid = false;
 						}
 						
 					}
 					else 
 					{
-						//found and opening tag
+						//found an opening tag
 						tags.push(tag);
 						tagsLoc.push(tagStart);
 					}
@@ -395,24 +404,35 @@ public class XML_JSONConverter {
 
 			
 		}
-			
+		if (!quotes.isEmpty())
+		{ //hanging quotes found
+			while (!quotes.isEmpty())
+			{
+				window.logError(106,quotes.pop());
+			}
+			isValid = false;
+
+		}
 		
 		if (!tagsLoc.isEmpty())
-		{
-			
+		{//extra tags found	
 			while (!tagsLoc.isEmpty())
 			{
 				window.logError(102,tagsLoc.pop());
 			}
+			isValid = false;
 		}	
-		if (!braces.isEmpty()){
-			while (!braces.isEmpty()){
+		
+		if (!braces.isEmpty())
+		{//extra <'s found
+			while (!braces.isEmpty())
+			{
 				window.logError(100,braces.pop());
 			}
-			return false;
+			isValid = false;
 		}
 				
-		return true;
+		return isValid;
 	}
 	
 	public static boolean doesConform(int arg0, int arg1, int arg2){

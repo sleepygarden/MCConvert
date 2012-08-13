@@ -32,7 +32,7 @@ public static void main(String[] args){
 				window.resetButtonKey();
 			}
 			
-			if (window.getButtonKey().equals("submit")) {
+			if (window.getButtonKey().equals("convert")) {
 				parse();
 				window.resetButtonKey();
 			}

@@ -1,19 +1,31 @@
 package mcornell;
 
+import java.awt.Color;
+import java.awt.Cursor;
+import java.awt.Font;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.IOException;
+import java.util.regex.Pattern;
 
 import javax.swing.JButton;
+import javax.swing.JEditorPane;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
+import javax.swing.JTextPane;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.Style;
+import javax.swing.text.StyleConstants;
+import javax.swing.text.StyleContext;
+import javax.swing.text.StyledDocument;
 
-public class ConverterGUI implements ActionListener{
+public class MarxdownGUI implements ActionListener{
 	
 	public final static String newline = "\n";
 
@@ -21,10 +33,12 @@ public class ConverterGUI implements ActionListener{
 	private JFrame popFrame;
 	private String button = "";
 	
-	private JTextArea input;
+	private JTextPane input;
 	JTextArea output;
+	
+	StyledDocument doc;
 
-	public ConverterGUI(){
+	public MarxdownGUI(){
 		init();
 	}
 
@@ -35,7 +49,7 @@ public class ConverterGUI implements ActionListener{
 		frame.setBounds(0, 0, 810, 620);
 		frame.setLocationRelativeTo(null);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		frame.setTitle("MC Convert");
+		frame.setTitle("Marx, the People's XML Authoring tool:");
 		frame.getContentPane().setLayout(null);
 		
 		JLabel inLbl = new JLabel("INPUT");
@@ -46,11 +60,22 @@ public class ConverterGUI implements ActionListener{
 		outLbl.setBounds(600,5, 55, 15);
 		frame.getContentPane().add(outLbl);
 
-		input = new JTextArea();
-		input.setLineWrap(true);
-		JScrollPane areaScrollPane = new JScrollPane(input);
-		areaScrollPane.setBounds(5, 25, 350, 570);
-		frame.getContentPane().add(areaScrollPane);
+//		input = new JEditorPane();
+//		input.setText("my name is <b>bob</b>");
+//		//input.setLineWrap(true);
+//		JScrollPane areaScrollPane = new JScrollPane(input);
+//		areaScrollPane.setBounds(5, 25, 350, 570);
+//		frame.getContentPane().add(areaScrollPane);
+		
+		 //Create a text pane.
+        input = new JTextPane();
+        Font font = new Font(Font.MONOSPACED, 0, 12);
+        input.setFont(font);
+        doc = input.getStyledDocument();
+        initStyles();
+        JScrollPane paneScrollPane = new JScrollPane(input);
+        paneScrollPane.setBounds(5,25,350,570);
+        frame.getContentPane().add(paneScrollPane);
 		
 		output = new JTextArea();
 		output.setLineWrap(true);
@@ -92,11 +117,30 @@ public class ConverterGUI implements ActionListener{
 
 	}
 	
+	
+	
+	private void initStyles(){
+		Style style = input.addStyle("Keyword", null);
+		StyleConstants.setForeground(style, new Color(70, 0, 70));
+		StyleConstants.setBold(style,true);
+		StyleConstants.setFontSize(style, 12);
+		
+		style = input.addStyle("Italic", null);
+		StyleConstants.setItalic(style, true);
+		
+		style = input.addStyle("24pts", null);
+		StyleConstants.setFontSize(style, 24);
+		
+		style = input.addStyle("Monospaced", null);
+		StyleConstants.setFontFamily(style, Font.MONOSPACED);
+		
+	}
+	
 	public Window getFrame() {
 		return frame;
 	}
 	
-	public JTextArea getInput() {
+	public JEditorPane getInput() {
 		return input;
 	}
 	
@@ -108,6 +152,12 @@ public class ConverterGUI implements ActionListener{
 		button = "";
 	}
 	
+	public void makeKeystyle(int begin, int end){
+		System.out.println("found it!!");
+		int length = end-begin;
+        doc.setCharacterAttributes(begin, length, input.getStyle("Keyword"), true);
+
+	}
 	
 	public void popAlert(String notif, String title){
 		if (title == null)
@@ -182,7 +232,7 @@ public class ConverterGUI implements ActionListener{
 	}
 	
 	public void appendInput(String message){
-		input.append(message+newline);
+		input.setText(input.getText()+message+newline);
 	}
 	
 	public void appendOutput(String message){
