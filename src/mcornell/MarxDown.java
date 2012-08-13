@@ -10,6 +10,8 @@ public class MarxDown {
 
 	static MarxdownGUI window;
 	static String content;
+	static String temp;
+	
 	
 public static void main(String[] args){
 		
@@ -30,13 +32,13 @@ public static void main(String[] args){
 		{
 			content = window.getInput().getText();
 			
-			if (window.getButtonKey().equals("swap")) {
-				window.appendOutput("Not in old mode!");
-
+			if (window.getButtonKey().equals("json_convert")) {
+				window.appendOutput("Not yet!");
 				window.resetButtonKey();
 			}
 			
-			if (window.getButtonKey().equals("submit")) {
+			if (window.getButtonKey().equals("xml_convert")) {
+				window.appendOutput("Not yet!");
 				window.resetButtonKey();
 			}
 			
@@ -46,28 +48,21 @@ public static void main(String[] args){
 				window.resetButtonKey();
 			}
 			
-			if (window.getButtonKey().equals("set_params")){
-				window.appendOutput("Not in old mode!");
-
-				window.resetButtonKey();
-			}
-			
 			if (window.getButtonKey().equals("validate")){
-				window.appendOutput("Not in old mode!");
+				window.appendOutput("Not yet!");
 				window.resetButtonKey();
 			}
 			
-			if (content != null)
-			{
-				List<IndexWrapper> list = findIndexesForKeyword("keyword");
-				if (list != null)
-				{
-					for (IndexWrapper wrapper : list){
-						window.makeKeystyle(wrapper.getStart(), wrapper.getEnd());
-
-					}
-				}
+			if (window.getButtonKey().equals("pop_cheat")){
+				window.popCheatSheet();
+				window.resetButtonKey();
 			}
+			
+			if (window.getButtonKey().equals("pop_cheat_ok")){
+				window.dismissCheatSheet();
+				window.resetButtonKey();
+			}
+			
 	
 			window.getFrame().repaint();
 			try {
@@ -79,24 +74,8 @@ public static void main(String[] args){
 				
 	}
 
-	public static List<IndexWrapper> findIndexesForKeyword(String keyword) 
+	public static void convertToJson()
 	{
-    String regex = "\\b"+keyword+"\\b";
-    Pattern pattern = Pattern.compile(regex);
-    Matcher matcher = pattern.matcher(content);
-    List<IndexWrapper> wrappers = new ArrayList<IndexWrapper>();
-
-    while(matcher.find() == true){
-        int end = matcher.end();
-        int start = matcher.start();
-        IndexWrapper wrapper = new IndexWrapper(start, end);
-        wrappers.add(wrapper);
-    }
-    return wrappers;
-
-}
-
-	public static void convert(){
 		
 	}
 	

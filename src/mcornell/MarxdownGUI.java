@@ -1,12 +1,15 @@
 package mcornell;
 
 import java.awt.Color;
-import java.awt.Cursor;
 import java.awt.Font;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.IOException;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.swing.JButton;
@@ -18,26 +21,39 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.JTextPane;
+import javax.swing.JWindow;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.text.BadLocationException;
 import javax.swing.text.Style;
 import javax.swing.text.StyleConstants;
-import javax.swing.text.StyleContext;
 import javax.swing.text.StyledDocument;
 
-public class MarxdownGUI implements ActionListener{
+public class MarxdownGUI implements ActionListener, KeyListener{
 	
 	public final static String newline = "\n";
 
 	private JFrame frame;
-	private JFrame popFrame;
+	private JWindow popUp;
 	private String button = "";
 	
-	private JTextPane input;
+    private Font monospaced;
+
+	
+	private static JTextPane input;
 	JTextArea output;
 	
 	StyledDocument doc;
 
+	public static final String[] keywords = 
+		{
+			"keyword", 
+			"mikecornell",
+			"schema",
+			"namespace",
+			"xml",
+			"json",
+			"test"
+		};
+	
 	public MarxdownGUI(){
 		init();
 	}
@@ -45,12 +61,16 @@ public class MarxdownGUI implements ActionListener{
 	
 	public void init(){
 		
+		monospaced = new Font(Font.MONOSPACED, 0, 12);
+
 		frame = new JFrame();
 		frame.setBounds(0, 0, 810, 620);
 		frame.setLocationRelativeTo(null);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.setTitle("Marx, the People's XML Authoring tool:");
 		frame.getContentPane().setLayout(null);
+		frame.addKeyListener(this); 
+
 		
 		JLabel inLbl = new JLabel("INPUT");
 		inLbl.setBounds(165,5, 50, 15);
@@ -59,23 +79,15 @@ public class MarxdownGUI implements ActionListener{
 		JLabel outLbl = new JLabel("OUTPUT");
 		outLbl.setBounds(600,5, 55, 15);
 		frame.getContentPane().add(outLbl);
-
-//		input = new JEditorPane();
-//		input.setText("my name is <b>bob</b>");
-//		//input.setLineWrap(true);
-//		JScrollPane areaScrollPane = new JScrollPane(input);
-//		areaScrollPane.setBounds(5, 25, 350, 570);
-//		frame.getContentPane().add(areaScrollPane);
 		
-		 //Create a text pane.
         input = new JTextPane();
-        Font font = new Font(Font.MONOSPACED, 0, 12);
-        input.setFont(font);
+        input.setFont(monospaced);
+        input.addKeyListener(this);
         doc = input.getStyledDocument();
-        initStyles();
-        JScrollPane paneScrollPane = new JScrollPane(input);
-        paneScrollPane.setBounds(5,25,350,570);
-        frame.getContentPane().add(paneScrollPane);
+        JScrollPane inScrollPane = new JScrollPane(input);
+        inScrollPane.setBounds(5,25,350,570);
+        inScrollPane.addKeyListener(this);   
+        frame.getContentPane().add(inScrollPane);
 		
 		output = new JTextArea();
 		output.setLineWrap(true);
@@ -84,17 +96,17 @@ public class MarxdownGUI implements ActionListener{
 		errScrollPane.setBounds(455, 25, 350, 570);
 		frame.getContentPane().add(errScrollPane);
 		
-		JButton btnSwap = new JButton("Swap");
-		btnSwap.setBounds(355, 25, 100, 25);
-	    btnSwap.setActionCommand("swap");
-	    btnSwap.addActionListener(this);
-		frame.getContentPane().add(btnSwap);
+		JButton btnJSON = new JButton("JSON");
+		btnJSON.setBounds(355, 25, 100, 25);
+	    btnJSON.setActionCommand("json_convert");
+	    btnJSON.addActionListener(this);
+		frame.getContentPane().add(btnJSON);
 			
-		JButton btnSubmit = new JButton("Convert");
-		btnSubmit.setBounds(355, 55, 100, 25);
-	    btnSubmit.setActionCommand("convert");
-	    btnSubmit.addActionListener(this);
-		frame.getContentPane().add(btnSubmit);
+		JButton btnXML = new JButton("XML");
+		btnXML.setBounds(355, 55, 100, 25);
+	    btnXML.setActionCommand("xml_convert");
+	    btnXML.addActionListener(this);
+		frame.getContentPane().add(btnXML);
  
 		JButton btnValidate = new JButton("Validate");
 		btnValidate.setBounds(355, 85, 100, 25);
@@ -102,27 +114,31 @@ public class MarxdownGUI implements ActionListener{
 	    btnValidate.addActionListener(this);
 		frame.getContentPane().add(btnValidate);
 		
-		JButton btnSetParams = new JButton("Set Params");
-		btnSetParams.setBounds(355, 540, 100, 25);
-		btnSetParams.setActionCommand("set_params");
-		btnSetParams.addActionListener(this);
-		frame.getContentPane().add(btnSetParams);
-			
+		JButton btnCheatSheet = new JButton("Cheat Sheet");
+		btnCheatSheet.setBounds(355, 540, 100, 25);
+	    btnCheatSheet.setActionCommand("pop_cheat");
+	    btnCheatSheet.addActionListener(this);
+		frame.getContentPane().add(btnCheatSheet);
+		
 	    JButton btnReset = new JButton("Reset");
 		btnReset.setBounds(355, 570, 100, 25);
 	    btnReset.setActionCommand("reset");
 	    btnReset.addActionListener(this);
 		frame.getContentPane().add(btnReset);
 		
+	    initStyles();
 
 	}
-	
-	
 	
 	private void initStyles(){
 		Style style = input.addStyle("Keyword", null);
 		StyleConstants.setForeground(style, new Color(70, 0, 70));
 		StyleConstants.setBold(style,true);
+		StyleConstants.setFontSize(style, 12);
+		
+		style = input.addStyle("Normal", null);
+		StyleConstants.setForeground(style, new Color(0, 0, 0));
+		StyleConstants.setBold(style,false);
 		StyleConstants.setFontSize(style, 12);
 		
 		style = input.addStyle("Italic", null);
@@ -153,10 +169,24 @@ public class MarxdownGUI implements ActionListener{
 	}
 	
 	public void makeKeystyle(int begin, int end){
-		System.out.println("found it!!");
-		int length = end-begin;
-        doc.setCharacterAttributes(begin, length, input.getStyle("Keyword"), true);
+        doc.setCharacterAttributes(begin, end-begin, input.getStyle("Keyword"), true);
+	}
+	public void refreshTextStyle(){		//refresh text formatting
 
+		if (input.getText() !=null)
+		{
+			doc.setCharacterAttributes(0, input.getText().length(),input.getStyle("Normal"), true);
+		
+			List<IndexWrapper> list;			//highlighting keywords
+			list = findIndexesForKeywords(keywords);
+			if (list != null)
+			{
+				for (IndexWrapper wrapper : list)
+				{
+					makeKeystyle(wrapper.getStart(), wrapper.getEnd());
+				}
+			}
+		}
 	}
 	
 	public void popAlert(String notif, String title){
@@ -219,9 +249,7 @@ public class MarxdownGUI implements ActionListener{
 				break;	        
 
 		}
-			System.out.println("appending \""+message+"\" to output");
 			appendOutput(message);
-
 	}
 	
 	public void setInput(String message){
@@ -236,7 +264,7 @@ public class MarxdownGUI implements ActionListener{
 	}
 	
 	public void appendOutput(String message){
-		output.append(message+newline);
+		output.setText(output.getText()+message+newline);
 	}
 	
 	public void clean(){
@@ -244,52 +272,46 @@ public class MarxdownGUI implements ActionListener{
 		output.setText(null);
 	}
 	
-	public void popSetParams(){
+	public void popCheatSheet()
+	{
+		popUp = new JWindow();
+		popUp.setBounds(0, 0, 400, 300);
+		popUp.setLocationRelativeTo(null);
+		popUp.setName("Cheat Sheet");
+		popUp.getContentPane().setLayout(null);
 		
-		popFrame = new JFrame();
-		popFrame.setBounds(0, 0, 400, 300);
-		popFrame.setLocationRelativeTo(null);
-		popFrame.setTitle("Set Params");
-		popFrame.getContentPane().setLayout(null);
 		
+		//TODO make this just a text view, not a table
 		DefaultTableModel model = new DefaultTableModel();
 		model.addColumn("");
 		model.addColumn("");
-		model.addColumn("");
-		model.addRow(new Object[]{"v1", "v2"});
-		model.addRow(new Object[]{"v1"});
-		model.addRow(new Object[]{"v1", "v2", "v3"});
-
+		model.addRow(new Object[]{"Marx Symbol", "what it does"});
+		model.addRow(new Object[]{"duh", "bluh"});
+		model.addRow(new Object[]{"1", "2"});
 
 		JTable params = new JTable(model);
+		params.getTableHeader().setReorderingAllowed(false);
+		params.getTableHeader().setResizingAllowed(false);
+		params.setCellSelectionEnabled(false);
 		JScrollPane paramsScrollPane = new JScrollPane(params);
-		paramsScrollPane.setBounds(5, 5, 390, 200);
-		popFrame.getContentPane().add(paramsScrollPane);
+		paramsScrollPane.setBounds(5, 5, 390, 262);
+		popUp.getContentPane().add(paramsScrollPane);		
+		//
 		
-		JButton btnPopRemove = new JButton("Remove");
-		btnPopRemove.setBounds(95, 250, 100, 25);
-		btnPopRemove.setActionCommand("pop_param_remove");
-		btnPopRemove.addActionListener(this);
-		popFrame.getContentPane().add(btnPopRemove);
-		
-		JButton btnPopAdd = new JButton("Add");
-		btnPopAdd.setBounds(195, 250, 100, 25);
-		btnPopAdd.setActionCommand("pop_param_add");
-		btnPopAdd.addActionListener(this);
-		popFrame.getContentPane().add(btnPopAdd);
-	
 		JButton btnPopOk = new JButton("OK");
-		btnPopOk.setBounds(295, 250, 100, 25);
-		btnPopOk.setActionCommand("pop_param_ok");
-		btnPopOk.addActionListener(this);
-		popFrame.getContentPane().add(btnPopOk);	
+		btnPopOk.setBounds(300, 270, 100, 25);
+		btnPopOk.setActionCommand("pop_cheat_ok");
+		btnPopOk.addActionListener(MarxdownGUI.this);
+		popUp.getContentPane().add(btnPopOk);	
 		
-		popFrame.setVisible(true);
+		popUp.setVisible(true);
 		
 	}
-	public void dismissSetParams(){
-		//popFrame.dismiss();
+	public void dismissCheatSheet(){
+		popUp.setVisible(false);
+		popUp.dispose();
 	}
+	
 	
 	@Override
 	public void actionPerformed(ActionEvent e) {
@@ -298,5 +320,42 @@ public class MarxdownGUI implements ActionListener{
 	
 	public void setVersion(String v){
 		frame.setTitle(frame.getTitle()+" "+v);
+	}
+	
+	public static List<IndexWrapper> findIndexesForKeywords(String[] keywords)
+	{
+		String regex = "";
+		for (String str:keywords){
+			regex = regex +"|" + "\\b"+str+"\\b";
+		}
+		Pattern pattern = Pattern.compile(regex.substring(1));
+		Matcher matcher = pattern.matcher(input.getText());
+		List<IndexWrapper> wrappers = new ArrayList<IndexWrapper>();
+
+		while(matcher.find() == true)
+		{
+			int end = matcher.end();
+			int start = matcher.start();
+			IndexWrapper wrapper = new IndexWrapper(start, end);
+			wrappers.add(wrapper);
+		}
+		return wrappers;
+	}
+
+
+	//KEY LISTENER
+	@Override
+	public void keyPressed(KeyEvent arg0) {
+	}
+
+
+	@Override
+	public void keyReleased(KeyEvent arg0) {
+		refreshTextStyle();
+	}
+
+
+	@Override
+	public void keyTyped(KeyEvent arg0) {		
 	}
 }
