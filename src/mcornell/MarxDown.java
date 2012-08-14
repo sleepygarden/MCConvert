@@ -8,7 +8,6 @@ public class MarxDown {
 	static String content;
 	static String temp;
 	
-	
 public static void main(String[] args){
 		
 		window = new MarxdownGUI();
@@ -62,7 +61,16 @@ public static void main(String[] args){
 	
 			window.getFrame().repaint();
 			try {
-				Thread.sleep(100);
+				//Thread.sleep(125); //8 frames per second
+				//Thread.sleep(100); //10 frames per second
+				//Thread.sleep(62); //16 frames per second
+				Thread.sleep(62); //approx 16 frames per second
+				//Thread.sleep(45); //approx 24 frames per second
+				//Thread.sleep(31); //approx 32 frames per second
+
+
+
+					
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}

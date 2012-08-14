@@ -26,7 +26,7 @@ import javax.swing.text.Style;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyledDocument;
 
-public class MarxdownGUI implements ActionListener{
+public class MarxdownGUI {
 	
 	public final static String newline = "\n";
 	public final static String tab = "\t";
@@ -64,8 +64,8 @@ public class MarxdownGUI implements ActionListener{
 		};
 	public static final String[] symbols = 
 		{
-			"@", 
-			"#",
+			":", 
+			"=",
 			"(",
 			")",
 			"{",
@@ -81,6 +81,7 @@ public class MarxdownGUI implements ActionListener{
 		
 		monospaced = new Font(Font.MONOSPACED, 0, 12);
 		InputListener inputListener = new InputListener();
+		ButtonListener buttonListener = new ButtonListener();
 
 		frame = new JFrame();
 		frame.setBounds(0, 0, 810, 620);
@@ -115,31 +116,31 @@ public class MarxdownGUI implements ActionListener{
 		JButton btnJSON = new JButton("JSON");
 		btnJSON.setBounds(355, 25, 100, 25);
 	    btnJSON.setActionCommand("json_convert");
-	    btnJSON.addActionListener(this);
+	    btnJSON.addActionListener(buttonListener);
 		frame.getContentPane().add(btnJSON);
 			
 		JButton btnXML = new JButton("XML");
 		btnXML.setBounds(355, 55, 100, 25);
 	    btnXML.setActionCommand("xml_convert");
-	    btnXML.addActionListener(this);
+	    btnXML.addActionListener(buttonListener);
 		frame.getContentPane().add(btnXML);
  
 		JButton btnValidate = new JButton("Validate");
 		btnValidate.setBounds(355, 85, 100, 25);
 	    btnValidate.setActionCommand("validate");
-	    btnValidate.addActionListener(this);
+	    btnValidate.addActionListener(buttonListener);
 		frame.getContentPane().add(btnValidate);
 		
 		JButton btnCheatSheet = new JButton("Cheat Sheet");
 		btnCheatSheet.setBounds(355, 540, 100, 25);
 	    btnCheatSheet.setActionCommand("pop_cheat");
-	    btnCheatSheet.addActionListener(this);
+	    btnCheatSheet.addActionListener(buttonListener);
 		frame.getContentPane().add(btnCheatSheet);
 		
 	    JButton btnReset = new JButton("Reset");
 		btnReset.setBounds(355, 570, 100, 25);
 	    btnReset.setActionCommand("reset");
-	    btnReset.addActionListener(this);
+	    btnReset.addActionListener(buttonListener);
 		frame.getContentPane().add(btnReset);
 		
 	    initStyles();
@@ -327,7 +328,7 @@ public class MarxdownGUI implements ActionListener{
 		JButton btnPopOk = new JButton("OK");
 		btnPopOk.setBounds(300, 270, 100, 25);
 		btnPopOk.setActionCommand("pop_cheat_ok");
-		btnPopOk.addActionListener(MarxdownGUI.this);
+		btnPopOk.addActionListener(new ButtonListener());
 		popUp.getContentPane().add(btnPopOk);	
 		
 		popUp.setVisible(true);
@@ -353,51 +354,55 @@ public class MarxdownGUI implements ActionListener{
 	
 	public void popError(int code, int index){
 		logError(code, index);
-		popAlert("ERROR at index "+index, "ERROR");
+		popAlert("ERROR "+code, getErrorCodeMessage(code, index));
+	}
+	
+	public void logError(int code, int index){
+		appendOutput(getErrorCodeMessage(code,index));
 	}
 
-	public void logError(int code, int index){
-			String message = "";
-			switch (code){
-						
-			case(1):
-				message = "No text entered";
-				break;			
-			case(100):
-				message = "XML is malformed at index:"+index+", unclosed tag";
-				break;
-			case(101):
-				message = "XML is malformed at index:"+index+", unopened tag";
-				break;
-			case(102):
-				message = "XML is malformed at index:"+index+", missing closing tag";	
-				break;
-			case(103):
-				message = "XML is malformed at index:"+index+", missing opening tag";
-				break;
-			case(104):
-				message = "XML is malformed at index:"+index+", extra comment opener";
-				break;
-			case(105):
-				message = "XML is malformed at index:"+index+", extra comment closer";	
-				break;	
-			case(106):
-				message = "XML is malformed at index:"+index+", hanging quote";
-				break;	
-			case(200):
-				message = "XML doesn't conform to validation params at index:"+index;
-				break;
-			case(201):
-				message = "XML tagnames are mismatched at index:"+index;
-				break;
-			case(300):
-				message = "You submitted something that isn't XML";
-				break;	
-			default: 
-				message = "An unknown error occured";
-				break;	        
-		}
-		appendOutput(message);
+	public String getErrorCodeMessage(int code, int index){ //TODO update these to relevant messages
+		String message = "";
+		switch (code){
+					
+		case(1):
+			message = "No text entered";
+			break;			
+		case(100):
+			message = "XML is malformed at index:"+index+", unclosed tag";
+			break;
+		case(101):
+			message = "XML is malformed at index:"+index+", unopened tag";
+			break;
+		case(102):
+			message = "XML is malformed at index:"+index+", missing closing tag";	
+			break;
+		case(103):
+			message = "XML is malformed at index:"+index+", missing opening tag";
+			break;
+		case(104):
+			message = "XML is malformed at index:"+index+", extra comment opener";
+			break;
+		case(105):
+			message = "XML is malformed at index:"+index+", extra comment closer";	
+			break;	
+		case(106):
+			message = "XML is malformed at index:"+index+", hanging quote";
+			break;	
+		case(200):
+			message = "XML doesn't conform to validation params at index:"+index;
+			break;
+		case(201):
+			message = "XML tagnames are mismatched at index:"+index;
+			break;
+		case(300):
+			message = "You submitted something that isn't XML";
+			break;	
+		default: 
+			message = "An unknown error occured";
+			break;	        
+	}
+		return message;
 	}
 	
 	//END POP
@@ -415,7 +420,6 @@ public class MarxdownGUI implements ActionListener{
 
 		while(matcher.find() == true)
 		{
-			System.out.println("got a keyword");
 			int end = matcher.end();
 			int start = matcher.start();
 			IndexWrapper wrapper = new IndexWrapper(start, end);
@@ -454,7 +458,6 @@ public class MarxdownGUI implements ActionListener{
 
 		while(matcher.find() == true)
 		{
-			System.out.println("got a number");
 			int end = matcher.end();
 			int start = matcher.start();
 			IndexWrapper wrapper = new IndexWrapper(start, end);
@@ -464,7 +467,7 @@ public class MarxdownGUI implements ActionListener{
 	}
 	public static List<IndexWrapper> findIndexesForStrings()
 	{
-		String regex = "\"[\\p{Print}]*\""; //any collection of visible and non visible items surrounded by "s
+		String regex = "\"[\\p{Print}]*\""; //any collection surrounded by "s
 		
 		Pattern pattern = Pattern.compile(regex);
 		Matcher matcher = pattern.matcher(input.getText());
@@ -489,6 +492,75 @@ public class MarxdownGUI implements ActionListener{
 
 		while(matcher.find() == true)
 		{
+			int end = matcher.end();
+			int start = matcher.start();
+			IndexWrapper wrapper = new IndexWrapper(start, end);
+			wrappers.add(wrapper);
+		}
+		return wrappers;
+	}
+	public static List<IndexWrapper> findIndexesForEmptyParenPairs()
+	{
+		String regex = "()"; //any instance of ()
+		
+		Pattern pattern = Pattern.compile(regex);
+		Matcher matcher = pattern.matcher(input.getText());
+		List<IndexWrapper> wrappers = new ArrayList<IndexWrapper>();
+
+		while(matcher.find() == true)
+		{
+			int end = matcher.end();
+			int start = matcher.start();
+			IndexWrapper wrapper = new IndexWrapper(start, end);
+			wrappers.add(wrapper);
+		}
+		return wrappers;
+	}
+	public static List<IndexWrapper> findIndexesForCompleteParenPairs()
+	{
+		String regex = "([\\p{Graph}]+:[\\p{Graph}]+)"; //any visible collection with a :, with at least one character before 
+														//and after the :, contained within ()
+		
+		Pattern pattern = Pattern.compile(regex);
+		Matcher matcher = pattern.matcher(input.getText());
+		List<IndexWrapper> wrappers = new ArrayList<IndexWrapper>();
+
+		while(matcher.find() == true)
+		{
+			int end = matcher.end();
+			int start = matcher.start();
+			IndexWrapper wrapper = new IndexWrapper(start, end);
+			wrappers.add(wrapper);
+		}
+		return wrappers;
+	}
+	public static List<IndexWrapper> findIndexesForCompleteNamespace()
+	{
+		String regex = "([\\p{Graph}]+&&[^:])"; //any visible collection within a () which has no :
+		
+		Pattern pattern = Pattern.compile(regex);
+		Matcher matcher = pattern.matcher(input.getText());
+		List<IndexWrapper> wrappers = new ArrayList<IndexWrapper>();
+
+		while(matcher.find() == true)
+		{
+			int end = matcher.end();
+			int start = matcher.start();
+			IndexWrapper wrapper = new IndexWrapper(start, end);
+			wrappers.add(wrapper);
+		}
+		return wrappers;
+	}
+	public static List<IndexWrapper> findIndexesForCurlyPairs()
+	{
+		String regex = "{[\\p{Print}]*}"; //any collection contained within {}
+		
+		Pattern pattern = Pattern.compile(regex);
+		Matcher matcher = pattern.matcher(input.getText());
+		List<IndexWrapper> wrappers = new ArrayList<IndexWrapper>();
+
+		while(matcher.find() == true)
+		{
 			System.out.println("got a comment");
 			int end = matcher.end();
 			int start = matcher.start();
@@ -500,16 +572,18 @@ public class MarxdownGUI implements ActionListener{
 	//END REGEX
 	
 	//LISTENERS
-	@Override
-	public void actionPerformed(ActionEvent e) {
-		   button = e.getActionCommand();     		
+	public class ButtonListener implements ActionListener{
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			   button = e.getActionCommand();     		
+		}
 	}
+	
 	
 	public class InputListener implements KeyListener{
 
 		@Override
 		public void keyPressed(KeyEvent e) {
-	
 		}
 
 		@Override
@@ -518,7 +592,8 @@ public class MarxdownGUI implements ActionListener{
 		}
 
 		@Override
-		public void keyTyped(KeyEvent e) {		
+		public void keyTyped(KeyEvent e) {	
+			refreshInputStyles();
 		}
 		
 	}
