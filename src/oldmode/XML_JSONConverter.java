@@ -1,4 +1,4 @@
-package mcornell;
+package oldmode;
 import java.awt.EventQueue;
 import java.util.ArrayList;
 import java.util.List;

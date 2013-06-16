@@ -1,6 +1,7 @@
-package mcornell;
+package marx;
 
 import java.awt.EventQueue;
+
 
 public class MarxDown {
 

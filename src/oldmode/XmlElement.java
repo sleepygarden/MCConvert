@@ -1,4 +1,4 @@
-package mcornell;
+package oldmode;
 
 import java.util.Map;
 import java.util.Stack;

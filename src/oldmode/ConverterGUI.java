@@ -1,4 +1,4 @@
-package mcornell;
+package oldmode;
 
 import java.awt.Window;
 import java.awt.event.ActionEvent;

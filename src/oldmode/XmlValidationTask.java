@@ -1,4 +1,4 @@
-package mcornell;
+package oldmode;
 
 public class XmlValidationTask {
 	private String tagA;
